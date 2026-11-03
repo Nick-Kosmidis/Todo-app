@@ -18,6 +18,8 @@ const PRIORITY_STYLES: Record<Priority, string> = {
   high: "bg-red-100 text-red-800",
 };
 
+const OVERTIME_STYLES = "bg-red-100 text-red-800 font-bold";
+
 export default function TodoItem({
   todo,
   onToggle,
@@ -54,8 +56,21 @@ export default function TodoItem({
     setEditingDetails(false);
   }
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isOverdue =
+    Boolean(todo.dueDate) &&
+    !todo.done &&
+    new Date(`${todo.dueDate}T00:00:00`) < today;
+
   return (
-    <li className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+    <li
+      className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
+        isOverdue
+          ? "border-red-300 bg-red-50"
+          : "border-gray-200 bg-white"
+      }`}
+    >
       <input
         type="checkbox"
         checked={todo.done}
@@ -102,6 +117,11 @@ export default function TodoItem({
             {todo.dueDate && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">
                 Due {new Date(`${todo.dueDate}T00:00:00`).toLocaleDateString()}
+              </span>
+            )}
+            {isOverdue && (
+              <span className={`rounded-full px-2 py-0.5 ${OVERTIME_STYLES}`}>
+                Overdue
               </span>
             )}
           </div>
