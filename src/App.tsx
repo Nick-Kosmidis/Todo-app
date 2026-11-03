@@ -4,12 +4,37 @@ import TodoItem from "./components/TodoItem";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Filter, Todo, Priority } from "./types";
 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+
 const FILTERS: Filter[] = ["all", "active", "completed"];
 
 export default function App() {
   const [todos, setTodos] = useLocalStorage<Todo[]>("todos", []);
   const [filter, setFilter] = useState<Filter>("all");
   const [sortOption, setSortOption] = useState<"none" | "high" | "low" | "dueDate">("none");
+  
+  const dragDisabled = sortOption !== "none";
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   function addTodo(text: string, priority?: Priority, dueDate?: string) {
     const todo: Todo = {
@@ -44,6 +69,18 @@ export default function App() {
 
   function clearCompleted() {
     setTodos(todos.filter((t) => !t.done));
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setTodos((items) => {
+        const oldIndex = items.findIndex((t) => t.id === active.id);
+        const newIndex = items.findIndex((t) => t.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
   }
 
   const priorityOrder: Record<Priority, number> = { low: 1, medium: 2, high: 3 };
@@ -115,18 +152,23 @@ export default function App() {
         </div>
       </div>
 
-      <ul className="space-y-2">
-        {visible.map((todo) => (
-          <TodoItem
-            key={todo.id}
-            todo={todo}
-            onToggle={toggleTodo}
-            onDelete={deleteTodo}
-            onEdit={editTodo}
-            onEditDetails={editTodoDetails}
-          />
-        ))}
-      </ul>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={visible.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+          <ul className="space-y-2">
+            {visible.map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                dragDisabled={dragDisabled}
+                onToggle={toggleTodo}
+                onDelete={deleteTodo}
+                onEdit={editTodo}
+                onEditDetails={editTodoDetails}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
 
       {visible.length === 0 && (
         <p className="mt-6 text-center text-gray-400">Nothing here yet.</p>
