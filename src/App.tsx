@@ -5,7 +5,6 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Filter, Todo, Priority } from "./types";
 
 const FILTERS: Filter[] = ["all", "active", "completed"];
-const SORT_OPTIONS: ("none" | "high" | "low" | "dueDate")[] = ["none", "high", "low", "dueDate"];
 
 export default function App() {
   const [todos, setTodos] = useLocalStorage<Todo[]>("todos", []);
