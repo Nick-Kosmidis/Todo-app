@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import prisma from "./src/prisma";
+import prisma from "./prisma";
 
 const app = express();
 app.use(cors()); // <-- Fixes browser blocking frontend-to-backend requests

@@ -46,8 +46,7 @@ async function addTodo(text: string, priority?: Priority, dueDate?: string) {
       body: JSON.stringify({
         text,
         priority,
-        dueDate,
-        userId: "12345" // Ensure this matches the default user created in the backend
+        dueDate
       }),
     });
 
