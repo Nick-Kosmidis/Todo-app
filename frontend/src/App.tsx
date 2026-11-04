@@ -36,17 +36,32 @@ export default function App() {
     })
   );
 
-  function addTodo(text: string, priority?: Priority, dueDate?: string) {
-    const todo: Todo = {
-      id: crypto.randomUUID(),
-      text,
-      done: false,
-      createdAt: Date.now(),
-      ...(dueDate ? { dueDate } : {}),
-      ...(priority ? { priority } : {}),
-    };
-    setTodos([todo, ...todos]);
+async function addTodo(text: string, priority?: Priority, dueDate?: string) {
+  try {
+    const response = await fetch("http://localhost:3000/api/todos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+        priority,
+        dueDate,
+        userId: "12345" // Ensure this matches the default user created in the backend
+      }),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.error || "Failed to create todo");
+    }
+
+    const savedTodo: Todo = await response.json();
+    setTodos([savedTodo, ...todos]);
+  } catch (error) {
+    console.error("Failed to add todo:", error);
   }
+}
 
   function toggleTodo(id: string) {
     setTodos(todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
