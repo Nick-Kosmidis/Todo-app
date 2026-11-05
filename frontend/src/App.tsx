@@ -72,64 +72,56 @@ export default function App() {
       }
       
       const savedTodo: Todo = await response.json();
-      setTodos([savedTodo, ...todos]);
+      setTodos((prev) => [savedTodo, ...prev]);
     } catch (error) {
       console.error("Failed to add todo:", error);
     }
   }
   
   async function deleteTodo(id: string) {
-    const response = await fetch(`http://localhost:3000/api/todos/${id}`, { 
-      method: "DELETE" 
-    });
-    if (response.ok) 
-      setTodos(todos.filter((t) => t.id !== id));
+    const response = await fetch(`http://localhost:3000/api/todos/${id}`, { method: "DELETE" });
+    if (response.ok) setTodos((prev) => prev.filter((t) => t.id !== id));
   }
 
   async function toggleTodo(id: string) {
     const todo = todos.find((t) => t.id === id);
     if (!todo) return;
-    const response = await fetch(`http://localhost:3000/api/todos/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ done: !todo.done }),
-    });
-    if (response.ok) {
-      const updated: Todo = await response.json();
-      setTodos(todos.map((t) => (t.id === id ? updated : t)));
-    }
+    await patchTodo(id, { done: !todo.done });
   }
 
-  async function patchTodo(id: string, changes: Partial<Todo> | Record<string, unknown>) {
+  async function patchTodo(id: string, changes: Record<string, unknown>) {
     try {
-    const response = await fetch(`http://localhost:3000/api/todos/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(changes),
-    });
-    if (response.ok) {
+      const response = await fetch(`http://localhost:3000/api/todos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(changes),
+      });
+      if (!response.ok) throw new Error("Failed to update todo");
       const updated: Todo = await response.json();
-      setTodos(todos.map((t) => (t.id === id ? updated : t)));
+      setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    } catch (error) {
+      console.error("Failed to patch todo:", error);
     }
-  }catch (error) {
-    console.error("Failed to patch todo:", error);
   }
-}
 
   function editTodo(id: string, text: string) {
     patchTodo(id, { text });
   }
 
   function editTodoDetails(
-    id: string,
-    details: { priority: Priority | undefined; dueDate: string | undefined },
-  ) {
-    patchTodo(id, details);
+  id: string,
+  details: { priority: Priority | undefined; dueDate: string | undefined },) 
+  {
+    patchTodo(id, {
+      priority: details.priority ?? null,
+      dueDate: details.dueDate ?? null,
+    });
   }
 
 
-  function clearCompleted() {
-    setTodos(todos.filter((t) => !t.done));
+  async function clearCompleted() {
+    const response = await fetch("http://localhost:3000/api/todos/completed", { method: "DELETE" });
+    if (response.ok) setTodos((prev) => prev.filter((t) => !t.done));
   }
 
   function handleDragEnd(event: DragEndEvent) {
