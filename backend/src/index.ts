@@ -34,7 +34,11 @@
   }
 
   const app = express();
-  app.use(cors()); // <-- Fixes browser blocking frontend-to-backend requests
+  app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://todo-app-xi-orcin.vercel.app"],
+  })
+);
   app.use(express.json());
 
   app.get("/health", (_req, res) => res.json({ ok: true }));
