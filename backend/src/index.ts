@@ -66,5 +66,19 @@ app.get("/api/todos", async (_req, res) => {
     res.status(500).json({ error: "Internal server error", details: String(error) });
   }
 });
+
+app.delete("/api/todos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.todo.delete({
+      where: { id },
+    });
+    res.status(204).end();
+  } catch (error) {
+    console.error("Error deleting todo:", error);
+    res.status(500).json({ error: "Internal server error", details: String(error) });
+  }
+});
+
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => console.log(`API running on http://localhost:${port}`));

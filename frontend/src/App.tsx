@@ -51,32 +51,41 @@ export default function App() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-async function addTodo(text: string, priority?: Priority, dueDate?: string) {
-  try {
-    const response = await fetch("http://localhost:3000/api/todos", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text,
-        priority,
-        dueDate
-      }),
-    });
-
-    if (!response.ok) {
-      const errData = await response.json();
-      throw new Error(errData.error || "Failed to create todo");
+  
+  async function addTodo(text: string, priority?: Priority, dueDate?: string) {
+    try {
+      const response = await fetch("http://localhost:3000/api/todos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text,
+          priority,
+          dueDate
+        }),
+      });
+      
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to create todo");
+      }
+      
+      const savedTodo: Todo = await response.json();
+      setTodos([savedTodo, ...todos]);
+    } catch (error) {
+      console.error("Failed to add todo:", error);
     }
-
-    const savedTodo: Todo = await response.json();
-    setTodos([savedTodo, ...todos]);
-  } catch (error) {
-    console.error("Failed to add todo:", error);
   }
-}
+  
+  async function deleteTodo(id: string) {
+    const response = await fetch(`http://localhost:3000/api/todos/${id}`, { 
+      method: "DELETE" 
+    });
+    if (response.ok) 
+      setTodos(todos.filter((t) => t.id !== id));
+  }
+
 
   function toggleTodo(id: string) {
     setTodos(todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
@@ -93,9 +102,6 @@ async function addTodo(text: string, priority?: Priority, dueDate?: string) {
     setTodos(todos.map((t) => (t.id === id ? { ...t, ...details } : t)));
   }
 
-  function deleteTodo(id: string) {
-    setTodos(todos.filter((t) => t.id !== id));
-  }
 
   function clearCompleted() {
     setTodos(todos.filter((t) => !t.done));
