@@ -80,5 +80,23 @@ app.delete("/api/todos/:id", async (req, res) => {
   }
 });
 
+app.patch("/api/todos/:id", async (req, res) => {
+  try {
+    const { text, done, priority, dueDate } = req.body;
+    const todo = await prisma.todo.update({
+      where: { id: req.params.id },
+      data: {
+        ...(text !== undefined && { text }),
+        ...(done !== undefined && { done }),
+        ...(priority !== undefined && { priority }),
+        ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
+      },
+    });
+    res.json(todo);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update todo" });
+  }
+});
+
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => console.log(`API running on http://localhost:${port}`));
