@@ -34,5 +34,9 @@
     "prisma": "^7.10.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
+  },
+  "scripts": {
+  "dev": "tsx watch src/index.ts",
+  "postinstall": "prisma generate"
   }
 }

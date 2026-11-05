@@ -14,6 +14,8 @@ interface AuthRequest extends Request {
   userId?: string;
 }
 
+
+
 function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
@@ -164,4 +166,9 @@ app.patch("/api/todos/:id", requireAuth, async (req: AuthRequest, res) => {
 });
 
 const port = Number(process.env.PORT) || 3000;
-app.listen(port, () => console.log(`API running on http://localhost:${port}`));
+
+if (!process.env.VERCEL) {
+  app.listen(port, () => console.log(`API running on http://localhost:${port}`));
+}
+
+export default app;
