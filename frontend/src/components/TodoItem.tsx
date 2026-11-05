@@ -23,6 +23,10 @@ const PRIORITY_STYLES: Record<Priority, string> = {
 
 const OVERTIME_STYLES = "bg-red-100 text-red-800 font-bold";
 
+function toDateInputValue(value?: string) {
+  return value?.slice(0, 10) ?? "";
+}
+
 export default function TodoItem({
   todo,
   dragDisabled,
@@ -46,7 +50,7 @@ export default function TodoItem({
   const [priorityDraft, setPriorityDraft] = useState<Priority | "">(
     todo.priority ?? "",
   );
-  const [dueDateDraft, setDueDateDraft] = useState(todo.dueDate ?? "");
+  const [dueDateDraft, setDueDateDraft] = useState(toDateInputValue(todo.dueDate));
 
   function save() {
     const trimmed = draft.trim();
@@ -57,7 +61,7 @@ export default function TodoItem({
 
   function startEditingDetails() {
     setPriorityDraft(todo.priority ?? "");
-    setDueDateDraft(todo.dueDate ?? "");
+    setDueDateDraft(toDateInputValue(todo.dueDate));
     setEditingDetails(true);
   }
 
@@ -71,10 +75,12 @@ export default function TodoItem({
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const dueDateValue = toDateInputValue(todo.dueDate);
+  const dueDate = dueDateValue ? new Date(`${dueDateValue}T00:00:00`) : null;
   const isOverdue =
-    Boolean(todo.dueDate) &&
+    dueDate !== null &&
     !todo.done &&
-    new Date(`${todo.dueDate}T00:00:00`) < today;
+    dueDate < today;
 
   return (
     <li
@@ -144,7 +150,7 @@ export default function TodoItem({
             )}
             {todo.dueDate && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">
-                Due {new Date(`${todo.dueDate}T00:00:00`).toLocaleDateString()}
+                Due {dueDate?.toLocaleDateString()}
               </span>
             )}
             {isOverdue && (

@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddTodo from "./components/AddTodo";
 import TodoItem from "./components/TodoItem";
-import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Filter, Todo, Priority } from "./types";
 
 import {
@@ -23,7 +22,24 @@ import {
 const FILTERS: Filter[] = ["all", "active", "completed"];
 
 export default function App() {
-  const [todos, setTodos] = useLocalStorage<Todo[]>("todos", []);
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+  useEffect(() => {
+    async function loadTodos() {
+      try {
+        const response = await fetch("http://localhost:3000/api/todos");
+        if (!response.ok) {
+          throw new Error("Failed to fetch todos");
+        }
+        const todosData: Todo[] = await response.json();
+        setTodos(todosData);
+      } catch (error) {
+        console.error("Failed to fetch todos:", error);
+      }
+    }
+    loadTodos();
+  }, []);
+
   const [filter, setFilter] = useState<Filter>("all");
   const [sortOption, setSortOption] = useState<"none" | "high" | "low" | "dueDate">("none");
   

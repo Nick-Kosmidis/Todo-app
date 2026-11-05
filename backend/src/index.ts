@@ -45,5 +45,26 @@ app.post("/api/todos", async (req, res) => {
   }
 });
 
+app.get("/api/todos", async (_req, res) => {
+  try {
+    const user  = await prisma.user.findUnique({
+      where: { email: "test@example.com" }
+    });
+
+    if (!user) 
+    {
+      return res.status(404).json({ error: "Default user not found" });
+    }
+
+    const todos = await prisma.todo.findMany({
+      where: { userId: user.id },
+      orderBy: [{ createdAt: "desc" }],
+    });
+    res.json(todos);
+  } catch (error) {
+    console.error("Error fetching todos:", error);
+    res.status(500).json({ error: "Internal server error", details: String(error) });
+  }
+});
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => console.log(`API running on http://localhost:${port}`));
