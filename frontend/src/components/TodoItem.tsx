@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Todo, Priority } from "../types";
+import type { Todo, Priority, Subtask } from "../types";
+import SubtaskList from "./SubtaskList";
 
 type Props = {
   todo: Todo;
@@ -13,6 +14,10 @@ type Props = {
     id: string,
     details: { priority: Priority | undefined; dueDate: string | undefined },
   ) => void;
+
+  onAddSubtask: (todoId: string, text: string) => void;
+  onToggleSubtask: (todoId: string, subtask: Subtask) => void;
+  onDeleteSubtask: (todoId: string, subtaskId: string) => void;
 };
 
 const PRIORITY_STYLES: Record<Priority, string> = {
@@ -34,6 +39,9 @@ export default function TodoItem({
   onDelete,
   onEdit,
   onEditDetails,
+  onAddSubtask,
+  onToggleSubtask,
+  onDeleteSubtask,
 }: Props) {
   const { listeners, setNodeRef, transform, transition, isDragging } =
   useSortable({ id: todo.id, disabled: dragDisabled });
@@ -226,6 +234,12 @@ export default function TodoItem({
       >
         Delete
       </button>
+      <SubtaskList
+        subtasks={todo.subtasks}
+        onAdd={(text) => onAddSubtask(todo.id, text)}
+        onToggle={(s) => onToggleSubtask(todo.id, s)}
+        onDelete={(id) => onDeleteSubtask(todo.id, id)}
+      />
     </li>
   );
 }

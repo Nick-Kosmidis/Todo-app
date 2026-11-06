@@ -94,6 +94,7 @@
       const userId = req.userId!;
       const todos = await prisma.todo.findMany({
         where: { userId },
+        include: {subtasks: {orderBy: [{ createdAt: "asc" }]}},
         orderBy: [{ createdAt: "desc" }],
       });
       res.json(todos);
@@ -109,6 +110,7 @@
       if (!text) return res.status(400).json({ error: "Text is required" });
 
       const newTodo = await prisma.todo.create({
+        include: { subtasks: true },
         data: {
           text,
           priority: priority || null,
@@ -122,6 +124,67 @@
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  app.post("/api/todos/:todoId/subtasks", requireAuth, async (req: AuthRequest, res) => {
+    try{
+      const userId = req.userId!;
+      const todoId = String(req.params.todoId);
+      const { text } = req.body;
+      if (!text) 
+        return res.status(400).json({ error: "Text is required" });
+
+      const todo = await prisma.todo.findFirst({ where: { id: todoId, userId } });
+      if (!todo) 
+        return res.status(404).json({ error: "Todo not found" });
+
+      const newSubtask = await prisma.subtask.create({
+        data:{
+          text: text.trim(),
+          todoId,
+        }
+      });
+      res.status(201).json(newSubtask);
+    } catch (error) {
+      console.error("Error creating subtask:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/subtasks/:id", requireAuth, async (req: AuthRequest, res) => {
+      try{
+        const userId = req.userId!;
+        const id = String(req.params.id);
+        await prisma.subtask.deleteMany({ where: { id, todo: { userId } } });
+        res.status(204).end();
+      } catch (error) {
+        console.error("Error deleting subtask:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+
+  app.patch("/api/subtasks/:id", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.userId!;
+      const id = String(req.params.id);
+      const { text, done } = req.body;
+
+      const result = await prisma.subtask.updateMany({
+        where: { id, todo: { userId } },
+        data: {
+          ...(text !== undefined && { text }),
+          ...(done !== undefined && { done }),
+        },
+      });
+      if (result.count === 0) return res.status(404).json({ error: "Subtask not found" });
+
+      const subtask = await prisma.subtask.findUnique({ where: { id } });
+      res.json(subtask);
+    } catch (error) {
+      console.error("Error updating subtask:", error);
+      res.status(500).json({ error: "Failed to update subtask" });
+    }
+  });
+
 
   // "completed" stays ABOVE ":id"
   app.delete("/api/todos/completed", requireAuth, async (req: AuthRequest, res) => {
@@ -164,7 +227,7 @@
       });
       if (result.count === 0) return res.status(404).json({ error: "Todo not found" });
 
-      const todo = await prisma.todo.findUnique({ where: { id } });
+      const todo = await prisma.todo.findUnique({ where: { id }, include: { subtasks: true } });
       res.json(todo);
     } catch (error) {
       console.error("Error updating todo:", error);

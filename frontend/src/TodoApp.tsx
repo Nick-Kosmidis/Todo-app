@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AddTodo from "./components/AddTodo";
 import TodoItem from "./components/TodoItem";
-import type { Filter, Todo, Priority } from "./types";
+import type { Filter, Todo, Priority, Subtask } from "./types";
 import { apiFetch } from "./api";
 
 import {
@@ -75,16 +75,63 @@ export default function TodoApp({ onLogout }: { onLogout: () => void }) {
       console.error("Failed to add todo:", error);
     }
   }
+
+  async function addSubtask(todoId: string, text: string) {
+    try {
+      const response = await apiFetch(`/api/todos/${todoId}/subtasks`, {
+        method: "POST",
+        body: JSON.stringify({ text }),
+      });
+      if (!response.ok) return;
+
+      const subtask: Subtask = await response.json();
+      setTodos((prev) =>
+        prev.map((t) => (t.id === todoId ? { ...t, subtasks: [...t.subtasks, subtask] } : t))
+      );
+    } catch (error) {
+      console.error("Failed to add subtask:", error);
+    }
+  }
   
   async function deleteTodo(id: string) {
     const response = await apiFetch(`/api/todos/${id}`, { method: "DELETE" });
     if (response.ok) setTodos((prev) => prev.filter((t) => t.id !== id));
   }
 
+  async function deleteSubtask(todoId: string, subtaskId: string) {
+    const response = await apiFetch(`/api/subtasks/${subtaskId}`, { method: "DELETE" });
+    if (response.ok) { 
+      setTodos((prev) => prev.map((t) => 
+        t.id === todoId ? { ...t, subtasks: t.subtasks.filter((s) => s.id !== subtaskId) } : t)
+      );
+    }
+  }
+
   async function toggleTodo(id: string) {
     const todo = todos.find((t) => t.id === id);
     if (!todo) return;
     await patchTodo(id, { done: !todo.done });
+  }
+
+  async function toggleSubtask(todoId: string, subtask: Subtask) {
+    try {
+      const response = await apiFetch(`/api/subtasks/${subtask.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ done: !subtask.done }),
+      });
+      if (!response.ok) return;
+
+      const updated: Subtask = await response.json();
+      setTodos((prev) =>
+        prev.map((t) =>
+          t.id === todoId
+            ? { ...t, subtasks: t.subtasks.map((s) => (s.id === updated.id ? updated : s)) }
+            : t
+        )
+      );
+    } catch (error) {
+      console.error("Failed to toggle subtask:", error);
+    }
   }
 
   async function patchTodo(id: string, changes: Record<string, unknown>) {
@@ -219,6 +266,9 @@ export default function TodoApp({ onLogout }: { onLogout: () => void }) {
                 onDelete={deleteTodo}
                 onEdit={editTodo}
                 onEditDetails={editTodoDetails}
+                onAddSubtask={addSubtask}
+                onToggleSubtask={toggleSubtask}
+                onDeleteSubtask={deleteSubtask}
               />
             ))}
           </ul>
